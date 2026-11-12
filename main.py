@@ -13,7 +13,7 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Modo Corrección de Textos) ===")
+print("=== Automatizador de Formulario (Definitivo) ===")
 input("Presiona ENTER cuando estés listo para empezar...")
 
 try:
@@ -33,7 +33,7 @@ try:
         
         wait = WebDriverWait(driver, 25)
 
-        # Esperar a que carguen los radio buttons (Pregunta 1, 2 y 6)
+        # Esperar a que carguen los radio buttons (Preguntas 1, 2 y 6)
         radio_groups = wait.until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[role='radiogroup']"))
         )
@@ -64,16 +64,15 @@ try:
                 driver.execute_script("arguments[0].click();", tienda_elegida)
                 print("  -> Pregunta 6 (Dónde compras): Respondida")
 
-        # 2. Rellenar campos de texto / numéricos (Preguntas 3, 4, 5, 9, 10 y otras de texto)
-        # Buscamos de forma exhaustiva cualquier input de texto, número o caja editable en Microsoft Forms
+        # 2. Rellenar campos de texto / numéricos (Preguntas 3, 4, 5, 9, 10)
         time.sleep(1.0)
+        # Selector optimizado para Microsoft Forms (busca inputs con aria-labelledby o textboxes)
         text_inputs = driver.find_elements(
-            By.CSS_SELECTOR, "input.office-form-textfield-input, input[type='text'], input[type='number'], div[contenteditable='true'], input[role='textbox']"
+            By.CSS_SELECTOR, "input[aria-labelledby], input[type='text'], input[type='number'], div[contenteditable='true']"
         )
 
         print(f"  -> Se detectaron {len(text_inputs)} campos de texto/número.")
 
-        # Función auxiliar segura para escribir en los inputs de Microsoft Forms
         def escribir_en_input(elemento, texto):
             try:
                 driver.execute_script("arguments[0].scrollIntoView(true);", elemento)
@@ -81,42 +80,37 @@ try:
                 elemento.clear()
                 elemento.send_keys(str(texto))
             except:
-                # Método alternativo por JavaScript si el input se pone tonto
                 driver.execute_script(f"arguments[0].value = '{texto}';", elemento)
 
         max_limite_sin_usar = [10, 25, 45, 70][min(indice_ropa_total, 3)]
         
-        # Pregunta 3 (No utilizadas)
+        # Asignar valores a los inputs encontrados en orden de aparición en la página
         if len(text_inputs) >= 1:
-            val = random.randint(1, max_limite_sin_usar)
-            escribir_en_input(text_inputs[0], val)
-            print(f"  -> Pregunta 3 (No usadas): {val}")
+            val1 = random.randint(1, max_limite_sin_usar)
+            escribir_en_input(text_inputs[0], val1)
+            print(f"  -> Pregunta 3 (No usadas): {val1}")
 
-        # Pregunta 4 (Compradas últimos 3m)
         if len(text_inputs) >= 2:
             compradas_3m = random.choices([0, 1, 2, 3, 4, 5, 6, 8], weights=[10, 20, 25, 20, 12, 7, 4, 2], k=1)[0]
             escribir_en_input(text_inputs[1], compradas_3m)
             print(f"  -> Pregunta 4 (Compradas 3m): {compradas_3m}")
 
-        # Pregunta 5 (Necesitadas)
         if len(text_inputs) >= 3:
             necesitadas = random.randint(0, min(compradas_3m, 3))
             escribir_en_input(text_inputs[2], necesitadas)
             print(f"  -> Pregunta 5 (Necesitadas): {necesitadas}")
 
-        # Pregunta 9 (Tiempo de uso - Texto)
         if len(text_inputs) >= 4:
             tiempo_uso = f"{random.randint(6, 36)} meses"
             escribir_en_input(text_inputs[3], tiempo_uso)
             print(f"  -> Pregunta 9 (Tiempo uso): {tiempo_uso}")
 
-        # Pregunta 10 (Con etiqueta)
         if len(text_inputs) >= 5:
             con_etiqueta = random.choices([0, 1, 2, 3, 4], weights=[50, 30, 12, 5, 3], k=1)[0]
             escribir_en_input(text_inputs[4], con_etiqueta)
             print(f"  -> Pregunta 10 (Con etiqueta): {con_etiqueta}")
 
-        # 3. Checkboxes (Preguntas de selección múltiple como la 7 y 8)
+        # 3. Checkboxes (Preguntas de selección múltiple 7 y 8)
         checkbox_groups = driver.find_elements(By.CSS_SELECTOR, "div[role='group']")
         for idx_cb, group in enumerate(checkbox_groups):
             checkboxes = group.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
@@ -153,7 +147,7 @@ try:
         except Exception:
             print(f"⚠️ [AVISO] El envío {num_envio} se ejecutó, pero tardó en mostrar la confirmación visual.")
 
-        # 6. Preparar el siguiente envío buscando "Enviar otra respuesta"
+        # 6. Preparar el siguiente envío
         if num_envio < total_envios:
             another_btn = wait.until(
                 EC.element_to_be_clickable(
