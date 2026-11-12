@@ -13,7 +13,7 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Estable) ===")
+print("=== Automatizador de Formulario (Recarga Directa) ===")
 
 # Preguntar al usuario cuántos envíos desea realizar
 try:
@@ -29,13 +29,15 @@ try:
     # options.add_argument("--headless") # Descomenta si quieres que corra oculto sin abrir ventanas
 
     driver = webdriver.Chrome(options=options)
-    driver.get(url)
 
     for i in range(total_envios):
         num_envio = i + 1
         print("\n--------------------------------------------------")
         print(f"Iniciando proceso del [Envio {num_envio} de {total_envios}]...")
         print("--------------------------------------------------")
+        
+        # Abrir o recargar la URL limpia del formulario directamente
+        driver.get(url)
         
         wait = WebDriverWait(driver, 25)
 
@@ -153,24 +155,8 @@ try:
         except Exception:
             print(f"⚠️ [AVISO] El envío {num_envio} se ejecutó, pero tardó en mostrar la confirmación visual.")
 
-        # 6. Preparar el siguiente envío (si no es el último)
+        # 6. Pausa de seguridad humana antes del siguiente envío (si no es el último)
         if num_envio < total_envios:
-            print("  -> Esperando y buscando el botón 'Enviar otra respuesta'...")
-            time.sleep(3.0)  # Pausa breve para que cargue el DOM de confirmación
-            
-            another_btn = wait.until(
-                EC.element_to_be_clickable(
-                    (
-                        By.XPATH,
-                        "//a[contains(text(), 'Enviar otra respuesta') or contains(text(), 'Submit another response')] | "
-                        "//button[contains(text(), 'Enviar otra respuesta') or contains(text(), 'Submit another response')]"
-                    )
-                )
-            )
-            driver.execute_script("arguments[0].scrollIntoView(true);", another_btn)
-            driver.execute_script("arguments[0].click();", another_btn)
-            time.sleep(2.0)
-
             pausa_humana = random.uniform(45.0, 120.0)
             minutos = int(pausa_humana // 60)
             segundos = int(pausa_humana % 60)
