@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,23 +13,23 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Con Control de Envíos) ===")
+print("=== Automatizador de Formulario (Modo Seguro) ===")
 input("Presiona ENTER cuando estés listo para empezar...")
 
-options = webdriver.ChromeOptions()
-# options.add_argument("--headless") # Descomenta si quieres que corra oculto sin abrir ventanas
-
-driver = webdriver.Chrome(options=options)
-driver.get(url)
-
-total_envios = 30
-
 try:
+    options = webdriver.ChromeOptions()
+    # options.add_argument("--headless") # Descomenta si quieres que corra oculto sin abrir ventanas
+
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    total_envios = 30
+
     for i in range(total_envios):
         num_envio = i + 1
-        print(f"\n--------------------------------------------------")
-        print(f"🚀 Iniciando proceso del [Envío {num_envio} de {total_envios}]...")
-        print(f"--------------------------------------------------")
+        print("\n--------------------------------------------------")
+        print(f"Iniciando proceso del [Envio {num_envio} de {total_envios}]...")
+        print("--------------------------------------------------")
         
         wait = WebDriverWait(driver, 20)
 
@@ -109,22 +110,20 @@ try:
         )
         driver.execute_script("arguments[0].click();", submit_btn)
 
-        # === 5. COMPROBACIÓN DE ÉXITO Y MENSAJE EN TERMINAL ===
+        # === 5. COMPROBACIÓN DE ÉXITO ===
         try:
             wait.until(
                 EC.presence_of_element_located(
                     (By.XPATH, "//*[contains(text(), 'su respuesta se ha enviado') or contains(text(), 'Your response was submitted') or contains(text(), 'Enviar otra respuesta')]")
                 )
             )
-            # Notificación clara en la terminal de cada envío exitoso
-            print(f"✅ ¡SE HA ENVIADO EL FORMULARIO {num_envio} DE {total_envios} CORRECTAMENTE!")
+            print(f"[OK] ¡Se ha enviado el formulario {num_envio} de {total_envios} correctamente!")
             
-            # Guardar captura como comprobante
             ruta_screenshot = f"comprobantes_envios/envio_{num_envio}.png"
             driver.save_screenshot(ruta_screenshot)
             
         except Exception:
-            print(f"⚠️ [AVISO] El envío {num_envio} se ejecutó, pero no se pudo confirmar visualmente el mensaje de éxito.")
+            print(f"[AVISO] El envío {num_envio} se ejecutó, pero no se pudo confirmar visualmente el mensaje de éxito.")
 
         # 6. Preparar el siguiente envío
         if num_envio < total_envios:
@@ -143,16 +142,24 @@ try:
             pausa_humana = random.uniform(45.0, 120.0)
             minutos = int(pausa_humana // 60)
             segundos = int(pausa_humana % 60)
-            print(f"⏳ Pausa de seguridad: Esperando {minutos}m {segundos}s antes del siguiente envío...")
+            print(f"Pausa de seguridad: Esperando {minutos}m {segundos}s antes del siguiente envio...")
             time.sleep(pausa_humana)
 
-    print("\n🎉 ¡EXCELENTE! Los 30 envíos se han completado y verificado con éxito.")
+    print("\n¡EXCELENTE! Los 30 envios se han completado y verificado con éxito.")
 
 except Exception as e:
-    print(f"\n❌ Error crítico durante la ejecución: {e}")
+    error_detalle = traceback.format_exc()
+    print(f"\n[ERROR CRITICO]: {e}")
+    
+    # Escribir el error detallado en un archivo de log para que puedas revisarlo si se cierra
+    with open("error.log", "w", encoding="utf-8") as f:
+        f.write(error_detalle)
+    print("Se ha guardado un registro detallado del error en el archivo 'error.log'.")
 
 finally:
     print("\nEl programa ha finalizado.")
     input("Presiona ENTER para cerrar esta ventana...")
-    time.sleep(2)
-    driver.quit()
+    try:
+        driver.quit()
+    except:
+        pass
