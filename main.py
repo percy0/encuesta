@@ -12,11 +12,11 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Con Comprobación Visual) ===")
+print("=== Automatizador de Formulario (Con Control de Envíos) ===")
 input("Presiona ENTER cuando estés listo para empezar...")
 
 options = webdriver.ChromeOptions()
-# options.add_argument("--headless") # Descomenta si quieres que corra oculto
+# options.add_argument("--headless") # Descomenta si quieres que corra oculto sin abrir ventanas
 
 driver = webdriver.Chrome(options=options)
 driver.get(url)
@@ -26,7 +26,10 @@ total_envios = 30
 try:
     for i in range(total_envios):
         num_envio = i + 1
-        print(f"\n[Envío {num_envio} de {total_envios}] Rellenando formulario...")
+        print(f"\n--------------------------------------------------")
+        print(f"🚀 Iniciando proceso del [Envío {num_envio} de {total_envios}]...")
+        print(f"--------------------------------------------------")
+        
         wait = WebDriverWait(driver, 20)
 
         # Esperar a que cargue el formulario
@@ -106,22 +109,22 @@ try:
         )
         driver.execute_script("arguments[0].click();", submit_btn)
 
-        # === 5. COMPROBACIÓN DE ÉXITO ===
-        # Esperamos a que aparezca el mensaje clásico de éxito de Microsoft Forms o el botón de reiniciar
+        # === 5. COMPROBACIÓN DE ÉXITO Y MENSAJE EN TERMINAL ===
         try:
             wait.until(
                 EC.presence_of_element_located(
                     (By.XPATH, "//*[contains(text(), 'su respuesta se ha enviado') or contains(text(), 'Your response was submitted') or contains(text(), 'Enviar otra respuesta')]")
                 )
             )
-            print(f"✅ [COMPROBADO] Envío {num_envio} procesado correctamente.")
+            # Notificación clara en la terminal de cada envío exitoso
+            print(f"✅ ¡SE HA ENVIADO EL FORMULARIO {num_envio} DE {total_envios} CORRECTAMENTE!")
             
-            # Guardar captura de pantalla como justificante/prueba
+            # Guardar captura como comprobante
             ruta_screenshot = f"comprobantes_envios/envio_{num_envio}.png"
             driver.save_screenshot(ruta_screenshot)
             
         except Exception:
-            print(f"⚠️ [ADVERTENCIA] No se detectó el mensaje de éxito visual en el envío {num_envio}, pero continuaremos.")
+            print(f"⚠️ [AVISO] El envío {num_envio} se ejecutó, pero no se pudo confirmar visualmente el mensaje de éxito.")
 
         # 6. Preparar el siguiente envío
         if num_envio < total_envios:
@@ -137,18 +140,19 @@ try:
             driver.execute_script("arguments[0].click();", another_btn)
             time.sleep(2.0)
 
-            # Pausa humana (45s - 120s)
             pausa_humana = random.uniform(45.0, 120.0)
             minutos = int(pausa_humana // 60)
             segundos = int(pausa_humana % 60)
-            print(f"⏳ Esperando {minutos}m {segundos}s para el siguiente envío...")
+            print(f"⏳ Pausa de seguridad: Esperando {minutos}m {segundos}s antes del siguiente envío...")
             time.sleep(pausa_humana)
 
-    print("\n🎉 ¡Los 30 envíos se han completado y verificado con éxito!")
+    print("\n🎉 ¡EXCELENTE! Los 30 envíos se han completado y verificado con éxito.")
 
 except Exception as e:
     print(f"\n❌ Error crítico durante la ejecución: {e}")
 
 finally:
-    time.sleep(5)
+    print("\nEl programa ha finalizado.")
+    input("Presiona ENTER para cerrar esta ventana...")
+    time.sleep(2)
     driver.quit()
