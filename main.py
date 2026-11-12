@@ -13,8 +13,16 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Respuestas Coherentes) ===")
-input("Presiona ENTER cuando estés listo para empezar...")
+print("=== Automatizador de Formulario (Dinámico) ===")
+
+# Preguntar al usuario cuántos envíos desea realizar
+try:
+    total_envios = int(input("¿Cuántos formularios deseas rellenar y enviar?: "))
+except ValueError:
+    total_envios = 30
+    print("Valor no válido. Se establecerá un total predeterminado de 30 envíos.")
+
+input(f"\nSe realizarán {total_envios} envíos. Presiona ENTER cuando estés listo para empezar...")
 
 try:
     options = webdriver.ChromeOptions()
@@ -22,8 +30,6 @@ try:
 
     driver = webdriver.Chrome(options=options)
     driver.get(url)
-
-    total_envios = 30
 
     for i in range(total_envios):
         num_envio = i + 1
@@ -81,35 +87,28 @@ try:
             except:
                 driver.execute_script(f"arguments[0].value = '{texto}';", elemento)
 
-        # Límites lógicos según el volumen total de ropa elegido en la P2
         max_limite_sin_usar = [10, 25, 45, 70][min(indice_ropa_total, 3)]
         
-        # --- Pregunta 3: ¿Cuántas prendas no has utilizado durante el último año? ---
-        compradas_3m = 0
         if len(text_inputs) >= 1:
             val_no_usadas = random.randint(1, max_limite_sin_usar)
             escribir_en_input(text_inputs[0], val_no_usadas)
             print(f"  -> P3 (No usadas último año): {val_no_usadas}")
 
-        # --- Pregunta 4: ¿Cuántas prendas has comprado en los últimos 3 meses? ---
         if len(text_inputs) >= 2:
             compradas_3m = random.choices([0, 1, 2, 3, 4, 5, 6, 8], weights=[10, 20, 25, 20, 12, 7, 4, 2], k=1)[0]
             escribir_en_input(text_inputs[1], compradas_3m)
             print(f"  -> P4 (Compradas últimos 3m): {compradas_3m}")
 
-        # --- Pregunta 5: ¿Cuántas prendas has comprado porque realmente las necesitabas? ---
         if len(text_inputs) >= 3:
             necesitadas = random.randint(0, min(compradas_3m, 3))
             escribir_en_input(text_inputs[2], necesitadas)
             print(f"  -> P5 (Realmente necesitadas): {necesitadas}")
 
-        # --- Pregunta 9: ¿Cuánto tiempo crees que utilizas de media una prenda...? ---
         if len(text_inputs) >= 4:
             tiempo_uso = f"{random.choice([6, 12, 18, 24, 36])} meses"
             escribir_en_input(text_inputs[3], tiempo_uso)
             print(f"  -> P9 (Tiempo medio de uso): {tiempo_uso}")
 
-        # --- Pregunta 10: ¿Cuántas prendas se quedan con etiqueta en el armario...? ---
         if len(text_inputs) >= 5:
             con_etiqueta = random.choices([0, 1, 2, 3, 4], weights=[50, 30, 12, 5, 3], k=1)[0]
             escribir_en_input(text_inputs[4], con_etiqueta)
@@ -132,9 +131,11 @@ try:
         print("  -> Intentando enviar formulario...")
         submit_btn = wait.until(
             EC.element_to_be_clickable(
-                (By.XPATH, "//button[@type='submit' or .//span[contains(text(),'Enviar') or contains(text(),'Submit')]]")
+                (By.XPATH, "//button[@type='submit' or @data-automation-id='submitButton' or .//span[contains(text(),'Enviar') or contains(text(),'Submit')]]")
             )
         )
+        driver.execute_script("arguments[0].scrollIntoView(true);", submit_btn)
+        time.sleep(0.5)
         driver.execute_script("arguments[0].click();", submit_btn)
 
         # === 5. COMPROBACIÓN DE ÉXITO ===
@@ -152,7 +153,7 @@ try:
         except Exception:
             print(f"⚠️ [AVISO] El envío {num_envio} se ejecutó, pero tardó en mostrar la confirmación visual.")
 
-        # 6. Preparar el siguiente envío
+        # 6. Preparar el siguiente envío (si no es el último)
         if num_envio < total_envios:
             another_btn = wait.until(
                 EC.element_to_be_clickable(
@@ -172,7 +173,7 @@ try:
             print(f"⏳ Pausa de seguridad: Esperando {minutos}m {segundos}s antes del siguiente envío...\n")
             time.sleep(pausa_humana)
 
-    print("\n🎉 ¡EXCELENTE! Los 30 envíos se han completado y verificado con éxito.")
+    print(f"\n🎉 ¡EXCELENTE! Los {total_envios} envíos se han completado y verificado con éxito.")
 
 except Exception as e:
     error_detalle = traceback.format_exc()
