@@ -11,7 +11,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configurar Python
-      uses: actions/setup-python@v5
+      uses: setup-python@v5
       with:
         python-version: '3.11'
 
@@ -20,9 +20,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install selenium pyinstaller
 
-    - name: Generar ejecutable con PyInstaller
+    - name: Generar ejecutable con PyInstaller (Con recoleccion de Selenium)
       run: |
-        pyinstaller --onefile --console main.py
+        pyinstaller --onefile --console --collect-all selenium main.py
 
     - name: Subir archivo EXE como artefacto
       uses: actions/upload-artifact@v4
