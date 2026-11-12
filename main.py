@@ -13,7 +13,7 @@ url = "https://forms.cloud.microsoft/pages/responsepage.aspx?id=FBHdc33vx0CGaVad
 # Crear carpeta para guardar comprobantes si no existe
 os.makedirs("comprobantes_envios", exist_ok=True)
 
-print("=== Automatizador de Formulario (Dinámico) ===")
+print("=== Automatizador de Formulario (Estable) ===")
 
 # Preguntar al usuario cuántos envíos desea realizar
 try:
@@ -138,7 +138,7 @@ try:
         time.sleep(0.5)
         driver.execute_script("arguments[0].click();", submit_btn)
 
-        # === 5. COMPROBACIÓN DE ÉXITO ===
+        # === 5. COMPROBACIÓN DE ÉXITO Y CAPTURA ===
         try:
             wait.until(
                 EC.presence_of_element_located(
@@ -155,6 +155,9 @@ try:
 
         # 6. Preparar el siguiente envío (si no es el último)
         if num_envio < total_envios:
+            print("  -> Esperando y buscando el botón 'Enviar otra respuesta'...")
+            time.sleep(3.0)  # Pausa breve para que cargue el DOM de confirmación
+            
             another_btn = wait.until(
                 EC.element_to_be_clickable(
                     (
@@ -164,6 +167,7 @@ try:
                     )
                 )
             )
+            driver.execute_script("arguments[0].scrollIntoView(true);", another_btn)
             driver.execute_script("arguments[0].click();", another_btn)
             time.sleep(2.0)
 
