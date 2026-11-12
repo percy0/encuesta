@@ -151,7 +151,6 @@ except Exception as e:
     error_detalle = traceback.format_exc()
     print(f"\n[ERROR CRITICO]: {e}")
     
-    # Escribir el error detallado en un archivo de log para que puedas revisarlo si se cierra
     with open("error.log", "w", encoding="utf-8") as f:
         f.write(error_detalle)
     print("Se ha guardado un registro detallado del error en el archivo 'error.log'.")
